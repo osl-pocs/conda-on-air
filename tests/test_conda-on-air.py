@@ -1,15 +1,20 @@
 """Tests for `conda-on-air` package."""
+from pathlib import Path
 
 import pytest
 
-
-@pytest.fixture
-def response():
-    """Sample pytest fixture.
-
-    See more at: http://doc.pytest.org/en/latest/fixture.html
-    """
+from conda_on_air import CondaOnAir
 
 
-def test_content(response):
-    """Sample pytest test function with the pytest fixture as an argument."""
+def test_config_reading(config_path):
+    """Test the config reading"""
+    conair = CondaOnAir(config_path)
+    assert conair.config_data
+
+
+def test_build(config_path):
+    """Test the config reading"""
+    conair = CondaOnAir(config_path)
+    conair.build()
+    print(conair.tmp_dir)
+    assert conair.tmp_dir == ""

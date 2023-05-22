@@ -1,11 +1,12 @@
-name: conda-on-air  # name of your project
-path: conda/on-air
+name: conda-on-air  # conda env name of your project
+path: conda/on-air  # path for the patches
+version: "1.0.0"  # version of the conda-on-air specs
 packages:
   llvmdev:
     url: https://github.com/conda-forge/llvmdev-feedstock
     rev: 891569f18cc9898dd180117ab132f1bd61f71cb1
-    version: 15.0.7
+    version: "15.0.7"
   clangdev:
     url: https://github.com/conda-forge/clangdev-feedstock
     rev: 1d6cb6a756eb007708c44c4468e12646a903ac2b
-    version: 15.0.7
+    version: "15.0.7"

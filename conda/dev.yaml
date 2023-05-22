@@ -3,6 +3,8 @@ channels:
   - nodefaults
   - conda-forge
 dependencies:
+  - conda-build
+  - nodejs  # used by semantic-release
   - python <3.11
   - poetry
-  - nodejs  # used by semantic-release
+  - urllib3 <2  # due an issue with poetry
