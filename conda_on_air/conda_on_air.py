@@ -6,6 +6,7 @@ import tempfile
 
 from colorama import Fore
 import sh
+import shutil
 import yaml
 
 from conda_on_air.errors import CondaOnAirError
@@ -61,6 +62,32 @@ class CondaOnAirSpec:
                             'required': True,  # maybe it could be optional
                             'type': 'string',
                         },
+                        'patches': {
+                            'help': (
+                                'A list of patches to apply to the original '
+                                'feedstock files.'
+                            ),
+                            'required': False,
+                            'type': 'list',
+                            '__items__': {
+                                '__value__': {
+                                    'help': "A list of patches files.",
+                                    'type': 'class',
+                                    '__value__': {
+                                        'original-file': {
+                                            'help': 'The path to the original file',
+                                            'type': 'string',
+                                            'required': True,
+                                        },
+                                        'patch-file': {
+                                            'help': 'The path to the patch file',
+                                            'type': 'string',
+                                            'required': True,
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     },
                 },
             },
@@ -76,6 +103,20 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
         self.config_path = config_path
         self.config_data = self.read_config(config_path)
         self.tmp_dir = Path(tempfile.mkdtemp(prefix='condaonair_'))
+
+        use_mamba_install = self.check_tool_exist('mamba')
+        use_mamba_build = (
+            use_mamba_install and
+            self.check_tool_exist('boa')
+        )
+        self.conda_app = 'mamba' if use_mamba_install else 'conda'
+        self.conda_build_app = (
+            'conda mambabuild' if use_mamba_build else 'conda build'
+        )
+
+    def check_tool_exist(self, name: str):
+        """Check whether `name` is on PATH and marked as executable."""
+        return shutil.which(name) is not None
 
     def shell_app(self, *args):
         sh_args = dict(
@@ -127,7 +168,6 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
 
     def clone(self):
         env_name = self.config_data.get('name')
-        patches_path = Path(self.config_data.get('path')) / 'patches'
         pkgs = self.config_data.get('packages')
 
         for pkg_name, pkg_data in pkgs.items():
@@ -151,12 +191,11 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
                     rev,
                 )
 
-    def _apply_patch(self, path: Path, name: str, version: str):
+    def _apply_patch(self, name: str, patches: list):
         ...
 
     def build(self):
         env_name = self.config_data.get('name')
-        patches_path = Path(self.config_data.get('path')) / 'patches'
         pkgs = self.config_data.get('packages')
 
         for pkg_name, pkg_data in pkgs.items():
@@ -164,25 +203,28 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
 
             pkg_version = pkg_data.get('version')
 
-            self._apply_patch(patches_path, pkg_name, pkg_version)
+            self._apply_patch(pkg_name, pkg_data.get('patches', list()))
 
             with sh.pushd(pkg_dir_path):
                 self.shell_app(
-                    'conda',
-                    'build',
+                    *self.conda_build_app.split(" "),
                     '.',
                 )
 
     def install(self):
         env_name = self.config_data.get('name')
-        patches_path = Path(self.config_data.get('path')) / 'patches'
         pkgs = self.config_data.get('packages')
+
+        extra_args = []
+        if os.getenv("CONDA_DEFAULT_ENV") == 'base':
+            extra_args.extend(['--name', env_name])
 
         for pkg_name, pkg_data in pkgs.items():
             self.shell_app(
-                'conda',
+                self.conda_app,
                 'install',
                 '--use-local',
+                '-y',
                 pkg_name
             )
 

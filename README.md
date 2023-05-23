@@ -11,6 +11,15 @@ A project that allows the local build and installation of an existent conda-forg
 $ conda-on-air build
 ```
 
+### Creating diffs
+
+In order to create diff files you can use:
+
+```bash
+
+diff -u old_file.txt new_file.txt
+
+```
 
 ## Features
 
