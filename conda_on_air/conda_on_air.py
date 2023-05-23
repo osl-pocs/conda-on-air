@@ -1,9 +1,25 @@
 """Main module."""
+import os
 from pathlib import Path
+import sys
 import tempfile
 
+from colorama import Fore
 import sh
 import yaml
+
+from conda_on_air.errors import CondaOnAirError
+
+
+class PrintPlugin:
+    def _print_error(self, message: str):
+        print(Fore.RED, message, Fore.RESET, file=sys.stderr)
+
+    def _print_info(self, message: str):
+        print(Fore.BLUE, message, Fore.RESET, file=sys.stdout)
+
+    def _print_warning(self, message: str):
+        print(Fore.YELLOW, message, Fore.RESET, file=sys.stdout)
 
 
 class CondaOnAirSpec:
@@ -52,21 +68,50 @@ class CondaOnAirSpec:
     }
 
 
-class CondaOnAir(CondaOnAirSpec):
+class CondaOnAir(CondaOnAirSpec, PrintPlugin):
     config_path: Path = Path('./.conda-on-air.yaml')
     config_data: dict = {}
 
     def __init__(self, config_path: Path):
         self.config_path = config_path
         self.config_data = self.read_config(config_path)
-        self.tmp_dir = Path(tempfile.mkdtemp(prefix="condaonair_"))
+        self.tmp_dir = Path(tempfile.mkdtemp(prefix='condaonair_'))
+
+    def shell_app(self, *args):
+        sh_args = dict(
+            _in=sys.stdin,
+            _out=sys.stdout,
+            _err=sys.stderr,
+            _bg=True,
+            _bg_exc=False,
+            _no_err=True,
+            _env=os.environ,
+            _new_session=True,
+        )
+        cmd_list = list(args)
+        exe = cmd_list.pop(0)
+        p = getattr(sh, exe)(*cmd_list, **sh_args)
+
+        try:
+            p.wait()
+        except sh.ErrorReturnCode as e:
+            self._print_error(str(e))
+            os._exit(CondaOnAirError.SH_ERROR_RETURN_CODE.value)
+        except KeyboardInterrupt:
+            os.close(fd)
+            pid = p.pid
+            p.kill_group()
+            self._print_error(f'[EE] Process {pid} killed.')
+            os._exit(CondaOnAirError.SH_KEYBOARD_INTERRUPT.value)
+        except Exception:
+            breakpoint()
 
     def verify_config(self, config_data):
-        if not config_data.get("version"):
-            raise Exception("Version spec not found.")
-        if not self.spec.get(config_data.get("version")):
+        if not config_data.get('version'):
+            raise Exception('Version spec not found.')
+        if not self.spec.get(config_data.get('version')):
             raise Exception(
-                "The version defined in the configuration file is not valid."
+                'The version defined in the configuration file is not valid.'
             )
         # TODO: check if the config_data is correct according to the specs
         return True
@@ -81,38 +126,51 @@ class CondaOnAir(CondaOnAirSpec):
         return {}
 
     def clone(self):
-        env_name = self.config_data.get("name")
-        patches_path = Path(self.config_data.get("path")) / "patches"
-        pkgs = self.config_data.get("packages")
+        env_name = self.config_data.get('name')
+        patches_path = Path(self.config_data.get('path')) / 'patches'
+        pkgs = self.config_data.get('packages')
 
         for pkg_name, pkg_data in pkgs.items():
-            url = pkg_data.get("url")
-            rev = pkg_data.get("rev")
-            version = pkg_data.get("version")
+            url = pkg_data.get('url')
+            rev = pkg_data.get('rev')
+            version = pkg_data.get('version')
             pkg_dir_path = str(self.tmp_dir / pkg_name)
 
-            sh.rm("-rf", pkg_dir_path)
-            sh.git("clone", url, pkg_dir_path)
+            self.shell_app('rm', '-rf', pkg_dir_path)
+            self.shell_app(
+                'git',
+                'clone',
+                url,
+                pkg_dir_path,
+            )
 
             with sh.pushd(pkg_dir_path):
-                sh.git("checkout", rev)
+                self.shell_app(
+                    'git',
+                    'checkout',
+                    rev,
+                )
 
     def build(self):
-        env_name = self.config_data.get("name")
-        patches_path = Path(self.config_data.get("path")) / "patches"
-        pkgs = self.config_data.get("packages")
+        env_name = self.config_data.get('name')
+        patches_path = Path(self.config_data.get('path')) / 'patches'
+        pkgs = self.config_data.get('packages')
 
         for pkg_name, pkg_data in pkgs.items():
             pkg_dir_path = str(self.tmp_dir / pkg_name)
 
             with sh.pushd(pkg_dir_path):
-                sh.git("conda", "build")
+                self.shell_app(
+                    'conda',
+                    'build',
+                    '.',
+                )
 
     def install(self):
         ...
 
     def remove_tmp_dir(self):
-        # sh.rm("-rf", str(self.tmp_dir))
+        # self.shell_app('rm', '-rf', str(self.tmp_dir))
         ...
 
     def teardown(self):

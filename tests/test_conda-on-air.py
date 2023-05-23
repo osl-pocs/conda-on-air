@@ -15,6 +15,5 @@ def test_config_reading(config_path):
 def test_build(config_path):
     """Test the config reading"""
     conair = CondaOnAir(config_path)
+    conair.clone()
     conair.build()
-    print(conair.tmp_dir)
-    assert conair.tmp_dir == ""
