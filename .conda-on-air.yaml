@@ -6,7 +6,3 @@ packages:
     url: https://github.com/conda-forge/pre-commit-feedstock
     rev: 0593e8a384918569be52ae290f9b9a6bb32584ea
     version: "3.3.2"
-  ruff:
-    url: https://github.com/conda-forge/ruff-feedstock
-    rev: 0ae59491cee124fc91bdc4092f4dcaeca3de531c
-    version: "0.0.269"

@@ -151,6 +151,9 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
                     rev,
                 )
 
+    def _apply_patch(self, path: Path, name: str, version: str):
+        ...
+
     def build(self):
         env_name = self.config_data.get('name')
         patches_path = Path(self.config_data.get('path')) / 'patches'
@@ -158,6 +161,10 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
 
         for pkg_name, pkg_data in pkgs.items():
             pkg_dir_path = str(self.tmp_dir / pkg_name)
+
+            pkg_version = pkg_data.get('version')
+
+            self._apply_patch(patches_path, pkg_name, pkg_version)
 
             with sh.pushd(pkg_dir_path):
                 self.shell_app(
@@ -167,7 +174,17 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
                 )
 
     def install(self):
-        ...
+        env_name = self.config_data.get('name')
+        patches_path = Path(self.config_data.get('path')) / 'patches'
+        pkgs = self.config_data.get('packages')
+
+        for pkg_name, pkg_data in pkgs.items():
+            self.shell_app(
+                'conda',
+                'install',
+                '--use-local',
+                pkg_name
+            )
 
     def remove_tmp_dir(self):
         # self.shell_app('rm', '-rf', str(self.tmp_dir))

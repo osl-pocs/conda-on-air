@@ -12,8 +12,6 @@ def test_config_reading(config_path):
     assert conair.config_data
 
 
-def test_build(config_path):
+def test_run(config_path):
     """Test the config reading"""
-    conair = CondaOnAir(config_path)
-    conair.clone()
-    conair.build()
+    CondaOnAir(config_path).run()
