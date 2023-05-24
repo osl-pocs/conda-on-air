@@ -188,7 +188,16 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
                 )
 
     def _apply_patch(self, name: str, patches: list):
-        ...
+        for patch in patches:
+            original_file = str(
+                self.tmp_dir / name / patch.get('original-file')
+            )
+            patch_file = str(Path(patch.get('patch-file')).resolve())
+
+            assert original_file
+            assert patch_file
+
+            self.shell_app('patch', original_file, '-i', patch_file)
 
     def build(self):
         pkgs = self.config_data.get('packages')

@@ -6,5 +6,5 @@ packages:
     rev: 0593e8a384918569be52ae290f9b9a6bb32584ea
     version: "3.3.2"
     patches:
-      - original-file: recipes/meta.yaml
+      - original-file: recipe/meta.yaml
         patch-file: conda/on-air/patches/pre-commit/3.3.2/meta.yaml
