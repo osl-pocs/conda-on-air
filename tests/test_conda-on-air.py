@@ -1,8 +1,4 @@
 """Tests for `conda-on-air` package."""
-from pathlib import Path
-
-import pytest
-
 from conda_on_air import CondaOnAir
 
 

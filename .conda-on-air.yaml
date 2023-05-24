@@ -1,5 +1,5 @@
 name: conda-on-air  # conda env name of your project
-version: "1.0.0"  # version of the conda-on-air specs
+version: "1.0"  # version of the conda-on-air spec
 packages:
   pre-commit:
     url: https://github.com/conda-forge/pre-commit-feedstock

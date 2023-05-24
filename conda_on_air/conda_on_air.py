@@ -1,13 +1,13 @@
 """Main module."""
 import os
-from pathlib import Path
+import shutil
 import sys
 import tempfile
+from pathlib import Path
 
-from colorama import Fore
 import sh
-import shutil
 import yaml
+from colorama import Fore
 
 from conda_on_air.errors import CondaOnAirError
 
@@ -25,7 +25,7 @@ class PrintPlugin:
 
 class CondaOnAirSpec:
     spec: dict = {
-        '1.0.0': {
+        '1.0': {
             'name': {
                 'help': (
                     'The conda environment name to be used. '
@@ -71,23 +71,27 @@ class CondaOnAirSpec:
                             'type': 'list',
                             '__items__': {
                                 '__value__': {
-                                    'help': "A list of patches files.",
+                                    'help': 'A list of patches files.',
                                     'type': 'class',
                                     '__value__': {
                                         'original-file': {
-                                            'help': 'The path to the original file',
+                                            'help': (
+                                                'The path to the original file'
+                                            ),
                                             'type': 'string',
                                             'required': True,
                                         },
                                         'patch-file': {
-                                            'help': 'The path to the patch file',
+                                            'help': (
+                                                'The path to the patch file'
+                                            ),
                                             'type': 'string',
                                             'required': True,
-                                        }
-                                    }
+                                        },
+                                    },
                                 }
-                            }
-                        }
+                            },
+                        },
                     },
                 },
             },
@@ -105,10 +109,7 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
         self.tmp_dir = Path(tempfile.mkdtemp(prefix='condaonair_'))
 
         use_mamba_install = self.check_tool_exist('mamba')
-        use_mamba_build = (
-            use_mamba_install and
-            self.check_tool_exist('boa')
-        )
+        use_mamba_build = use_mamba_install and self.check_tool_exist('boa')
         self.conda_app = 'mamba' if use_mamba_install else 'conda'
         self.conda_build_app = (
             'conda mambabuild' if use_mamba_build else 'conda build'
@@ -139,13 +140,10 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
             self._print_error(str(e))
             os._exit(CondaOnAirError.SH_ERROR_RETURN_CODE.value)
         except KeyboardInterrupt:
-            os.close(fd)
             pid = p.pid
             p.kill_group()
             self._print_error(f'[EE] Process {pid} killed.')
             os._exit(CondaOnAirError.SH_KEYBOARD_INTERRUPT.value)
-        except Exception:
-            breakpoint()
 
     def verify_config(self, config_data):
         if not config_data.get('version'):
@@ -167,13 +165,11 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
         return {}
 
     def clone(self):
-        env_name = self.config_data.get('name')
         pkgs = self.config_data.get('packages')
 
         for pkg_name, pkg_data in pkgs.items():
             url = pkg_data.get('url')
             rev = pkg_data.get('rev')
-            version = pkg_data.get('version')
             pkg_dir_path = str(self.tmp_dir / pkg_name)
 
             self.shell_app('rm', '-rf', pkg_dir_path)
@@ -195,19 +191,16 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
         ...
 
     def build(self):
-        env_name = self.config_data.get('name')
         pkgs = self.config_data.get('packages')
 
         for pkg_name, pkg_data in pkgs.items():
             pkg_dir_path = str(self.tmp_dir / pkg_name)
 
-            pkg_version = pkg_data.get('version')
-
             self._apply_patch(pkg_name, pkg_data.get('patches', list()))
 
             with sh.pushd(pkg_dir_path):
                 self.shell_app(
-                    *self.conda_build_app.split(" "),
+                    *self.conda_build_app.split(' '),
                     '.',
                 )
 
@@ -216,16 +209,12 @@ class CondaOnAir(CondaOnAirSpec, PrintPlugin):
         pkgs = self.config_data.get('packages')
 
         extra_args = []
-        if os.getenv("CONDA_DEFAULT_ENV") == 'base':
+        if os.getenv('CONDA_DEFAULT_ENV') == 'base':
             extra_args.extend(['--name', env_name])
 
         for pkg_name, pkg_data in pkgs.items():
             self.shell_app(
-                self.conda_app,
-                'install',
-                '--use-local',
-                '-y',
-                pkg_name
+                self.conda_app, 'install', '--use-local', '-y', pkg_name
             )
 
     def remove_tmp_dir(self):
