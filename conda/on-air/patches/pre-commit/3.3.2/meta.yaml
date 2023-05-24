@@ -1,0 +1,11 @@
+--- old/meta.yaml       2023-05-23 18:12:10.313412200 -0400
++++ new/meta.yaml       2023-05-23 18:12:33.625611577 -0400
+@@ -9,7 +9,7 @@
+   sha256: 92bd09f231f84297b31ef272f1bdd126df30d57a0482345a93ee350ca44c87b8
+
+ build:
+-  number: 0
++  number: 1
+   noarch: python
+   entry_points:
+     - pre-commit = pre_commit.main:main

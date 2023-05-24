@@ -3,6 +3,14 @@ channels:
   - nodefaults
   - conda-forge
 dependencies:
+  - boa
+  - conda >=4.13.*
+  - conda-build >=3.20
+  - conda-verify
+  - git
+  - mamba
+  - nodejs  # used by semantic-release
   - python <3.11
   - poetry
-  - nodejs  # used by semantic-release
+  - shyaml
+  - urllib3 <2  # due an issue with poetry
